@@ -1,0 +1,8 @@
+{
+  "name": "Atmospheric Effects Simulator",
+  "description": "An elegant, formal style application that features falling snowflakes and rising balloons animations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
