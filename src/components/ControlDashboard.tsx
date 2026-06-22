@@ -101,8 +101,8 @@ export default function ControlDashboard() {
   }, []);
 
   const currentParticleCount = useMemo(() => {
-    if (activeEffect === 'rosepetals') return Math.floor(60 * intensity);
-    if (activeEffect === 'balloons') return Math.floor(30 * intensity);
+    if (activeEffect === 'rosepetals') return Math.floor(120 * intensity);
+    if (activeEffect === 'balloons') return Math.floor(120 * intensity);
     return 0;
   }, [activeEffect, intensity]);
 
@@ -243,40 +243,40 @@ export default function ControlDashboard() {
 
 
           {/* Simulation Primary Card */}
-          <div className="bg-white/92 backdrop-blur-md border border-[#E2E8F0]/80 rounded-xl p-4 md:p-5 shadow-md flex flex-col gap-4 max-w-xs w-full self-end ml-auto">
+          <div className="fixed bottom-4 right-4 z-50 bg-white/92 backdrop-blur-md border border-[#E2E8F0]/80 rounded-lg p-2 shadow-lg flex flex-col gap-1.5 max-w-[165px] w-full">
             
             {/* Segment Header */}
-            <div className="border-b border-[#E2E8F0] pb-3 flex justify-between items-center">
-              <h3 className="font-display font-bold text-xs text-[#94A3B8] uppercase tracking-wider">
-                Simulation Controls
+            <div className="pb-1.5 flex justify-between items-center bg-[#156ddf] px-1.5 py-1 rounded-md text-white">
+              <h3 className="font-display font-bold text-[8px] text-white/95 uppercase tracking-wider">
+                Simulation
               </h3>
-              <div className="text-[10px] text-slate-500 font-mono font-bold">
-                {activeEffect !== 'idle' ? `RUNNING: ${timeLeft.toFixed(1)}s` : 'SYSTEM STANDBY'}
+              <div className="text-[7px] text-blue-105 font-mono font-bold">
+                {activeEffect !== 'idle' ? `${timeLeft.toFixed(1)}s` : 'STBY'}
               </div>
             </div>
 
             {/* Custom Grid matching the exact design button layout */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-1.5">
               
               {/* Trigger Rose Petals Button */}
               <button
                 id="btn-trigger-rosepetals"
                 onClick={() => triggerSimulation('rosepetals')}
-                className={`py-4 px-3 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all duration-300 relative overflow-hidden group ${
+                className={`py-1.5 px-1 rounded-lg border flex flex-col items-center justify-center gap-1 transition-all duration-300 relative overflow-hidden group w-full bg-[#1e28ac] text-[#eb1121] ${
                   activeEffect === 'rosepetals'
-                    ? 'border-rose-600 bg-rose-50/50 text-[#1E293B] shadow-sm'
-                    : 'border-[#E2E8F0] bg-white text-[#1E293B] hover:border-rose-600 hover:bg-slate-50 cursor-pointer hover:-translate-y-0.5'
+                    ? 'border-rose-400 ring-1 ring-rose-200'
+                    : 'border-[#1e28ac]/15 hover:border-rose-400 cursor-pointer'
                 }`}
               >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl transition-transform duration-500 ${activeEffect === 'rosepetals' ? 'bg-rose-600 text-white rotate-12 scale-105 animate-pulse' : 'bg-[#FFF1F2] text-rose-600 group-hover:scale-105'}`}>
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs transition-transform duration-500 ${activeEffect === 'rosepetals' ? 'bg-rose-600 text-white rotate-12 scale-105 animate-pulse' : 'bg-[#FFF1F2] text-rose-600 group-hover:scale-105'}`}>
                   🌹
                 </div>
-                <div className="text-center">
-                  <span className="block font-bold text-sm text-[#1E293B]">Rose Petals</span>
-                  <span className="text-[10px] text-slate-400 block mt-0.5">Initiate velvety descend</span>
+                <div className="text-center leading-none">
+                  <span className="block font-normal text-[9px] text-[#ec0e4b]">Rose Petal</span>
+                  <span className="text-[6.5px] text-[#eb1121]/75 block mt-0.5">Petal fall</span>
                 </div>
                 {activeEffect === 'rosepetals' && (
-                  <span className="absolute bottom-1 font-mono text-[9px] text-rose-600 font-bold uppercase tracking-wider">Active {timeLeft.toFixed(1)}s</span>
+                  <span className="absolute bottom-0.2 font-mono text-[6px] text-[#eb1121] font-bold uppercase tracking-wider">{timeLeft.toFixed(1)}s</span>
                 )}
               </button>
 
@@ -284,21 +284,21 @@ export default function ControlDashboard() {
               <button
                 id="btn-trigger-balloons"
                 onClick={() => triggerSimulation('balloons')}
-                className={`py-4 px-3 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all duration-300 relative overflow-hidden group ${
+                className={`py-1.5 px-1 rounded-lg border flex flex-col items-center justify-center gap-1 transition-all duration-300 relative overflow-hidden group w-full bg-[#2b1bc6] text-white ${
                   activeEffect === 'balloons'
-                    ? 'border-blue-600 bg-blue-50/50 text-[#1E293B] shadow-sm'
-                    : 'border-[#E2E8F0] bg-white text-[#1E293B] hover:border-blue-600 hover:bg-slate-50 cursor-pointer hover:-translate-y-0.5'
+                    ? 'border-blue-400 ring-1 ring-blue-200'
+                    : 'border-[#2b1bc6]/15 hover:border-blue-400 cursor-pointer'
                 }`}
               >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl transition-transform duration-500 ${activeEffect === 'balloons' ? 'bg-[#2563EB] text-white -translate-y-0.5 scale-105' : 'bg-[#F1F5F9] text-rose-500 group-hover:scale-105'}`}>
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs transition-transform duration-500 ${activeEffect === 'balloons' ? 'bg-[#2563EB] text-white -translate-y-0.5 scale-105' : 'bg-[#F1F5F9] text-rose-500 group-hover:scale-105'}`}>
                   🎈
                 </div>
-                <div className="text-center">
-                  <span className="block font-bold text-sm text-[#1E293B]">Balloons</span>
-                  <span className="text-[10px] text-slate-400 block mt-0.5">Launch helium envelopes</span>
+                <div className="text-center leading-none">
+                  <span className="block font-normal text-[9px] text-[#f00f46]">Balloon</span>
+                  <span className="text-[6.5px] text-white/70 block mt-0.5">Helium rise</span>
                 </div>
                 {activeEffect === 'balloons' && (
-                  <span className="absolute bottom-1 font-mono text-[9px] text-blue-600 font-bold uppercase tracking-wider">Active {timeLeft.toFixed(1)}s</span>
+                  <span className="absolute bottom-0.2 font-mono text-[6px] text-blue-200 font-bold uppercase tracking-wider">{timeLeft.toFixed(1)}s</span>
                 )}
               </button>
 
@@ -306,23 +306,23 @@ export default function ControlDashboard() {
 
             {/* Design Dashed Alert box */}
             {activeEffect === 'idle' ? (
-              <div className="p-3 bg-white/50 border-2 border-dashed border-[#CBD5E1] rounded-lg text-center backdrop-blur-sm">
-                <p className="text-xs text-[#64748B] font-semibold">Select an atmospheric event to begin rendering.</p>
+              <div className="p-1 bg-white/50 border border-dashed border-[#CBD5E1] rounded-md text-center backdrop-blur-sm">
+                <p className="text-[7.5px] text-[#64748B] font-semibold leading-tight">Pick an event.</p>
               </div>
             ) : (
-              <div className="p-3 bg-blue-50/90 border border-blue-200 rounded-lg flex items-center justify-between backdrop-blur-sm">
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping" />
-                  <span className="text-blue-800 font-bold uppercase tracking-wider font-mono text-[9px]">
-                    ACTIVE: {activeEffect.toUpperCase()}
+              <div className="p-1 bg-blue-50/90 border border-blue-200 rounded-md flex flex-col items-center gap-1 backdrop-blur-sm">
+                <div className="flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-blue-600 animate-ping" />
+                  <span className="text-blue-800 font-bold uppercase tracking-wider font-mono text-[7px]">
+                    ON: {activeEffect === 'rosepetals' ? 'PETALS' : 'BALLOONS'}
                   </span>
                 </div>
                 <button
                   id="btn-cancel-simulation"
                   onClick={cancelActiveSimulation}
-                  className="px-2.5 py-1 rounded-md bg-white border border-red-200 text-red-600 hover:bg-red-50 text-[10px] font-bold transition-all focus:outline-none flex items-center gap-1 shadow-sm"
+                  className="px-1.5 py-0.5 w-full rounded bg-white border border-red-200 text-red-600 hover:bg-red-50 text-[7.5px] font-bold transition-all focus:outline-none flex items-center justify-center gap-1 shadow-sm cursor-pointer"
                 >
-                  <RotateCcw className="w-3 h-3" />
+                  <RotateCcw className="w-2 h-2" />
                   <span>Abort</span>
                 </button>
               </div>

@@ -33,7 +33,7 @@ const BALLOON_PALETTES = [
 export default function BalloonEffect({ intensity = 1, durationLeft }: BalloonEffectProps) {
   const balloons = useMemo(() => {
     const items: BalloonItem[] = [];
-    const count = Math.floor(30 * intensity); // 30 balloons is a very healthy density
+    const count = Math.floor(120 * intensity); // 120 balloons for twice the density
 
     for (let i = 0; i < count; i++) {
       const left = Math.random() * 88 + 6; // range 6% to 94% to prevent edge clipping

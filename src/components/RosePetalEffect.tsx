@@ -17,7 +17,7 @@ export default function RosePetalEffect({ intensity = 1, durationLeft }: RosePet
   // Generate a stable list of rose petals when mounted
   const petals = useMemo(() => {
     const items: RosePetalItem[] = [];
-    const count = Math.floor(60 * intensity); // Generates approx 60 petals for lush coverage
+    const count = Math.floor(120 * intensity); // Generates approx 120 petals for lush coverage
     
     // Different rose tones for rich variation
     const gradientClasses = [
