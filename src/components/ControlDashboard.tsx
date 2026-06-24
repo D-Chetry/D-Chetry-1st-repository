@@ -103,7 +103,14 @@ const playCrowdCheer = () => {
     noise.stop(ctx.currentTime + 5.0);
 
     // --- Procedural Crowd Clapping Simulation (for 5 seconds) ---
-    // Create a short white noise buffer specifically for claps to save resources
+    // Dedicated Master Gain for claps so they don't get attenuated by the fast-decaying crowd vocal cheer
+    const clapsMasterGain = ctx.createGain();
+    clapsMasterGain.gain.setValueAtTime(0.5, ctx.currentTime);
+    clapsMasterGain.gain.setValueAtTime(0.5, ctx.currentTime + 4.0); // Sustain high volume for 4s
+    clapsMasterGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 5.0); // Smooth 1-second fade out
+    clapsMasterGain.connect(ctx.destination);
+
+    // Create a white noise buffer for claps
     const clapBufferSize = ctx.sampleRate;
     const clapNoiseBuffer = ctx.createBuffer(1, clapBufferSize, ctx.sampleRate);
     const clapNoiseData = clapNoiseBuffer.getChannelData(0);
@@ -111,35 +118,35 @@ const playCrowdCheer = () => {
       clapNoiseData[i] = Math.random() * 2 - 1;
     }
 
-    // Simulate 8 independent clappers clapping at semi-random intervals
-    const clapperCount = 8;
+    // Simulate 12 independent clappers clapping at semi-random intervals for high density
+    const clapperCount = 12;
     for (let c = 0; c < clapperCount; c++) {
-      let time = ctx.currentTime + Math.random() * 0.4; // Staggered entry
+      let time = ctx.currentTime + Math.random() * 0.45; // Staggered entrance
       while (time < ctx.currentTime + 5.0) {
         const clapSource = ctx.createBufferSource();
         clapSource.buffer = clapNoiseBuffer;
-        clapSource.loop = true;
 
         const clapFilter = ctx.createBiquadFilter();
         clapFilter.type = 'bandpass';
-        // Randomize frequency slightly per clap to represent different hands/positions
-        clapFilter.frequency.setValueAtTime(1100 + Math.random() * 500, time);
-        clapFilter.Q.setValueAtTime(2.5, time);
+        // Human hand claps have formants around 900Hz to 1600Hz
+        clapFilter.frequency.setValueAtTime(900 + Math.random() * 600, time);
+        // Lower Q allows more noise frequencies through, making the clap sound much fuller and louder
+        clapFilter.Q.setValueAtTime(1.4, time);
 
         const clapGain = ctx.createGain();
         clapGain.gain.setValueAtTime(0, time);
-        clapGain.gain.linearRampToValueAtTime(0.06 + Math.random() * 0.06, time + 0.003); // Instant attack
-        clapGain.gain.exponentialRampToValueAtTime(0.001, time + 0.025 + Math.random() * 0.03); // Quick decay
+        clapGain.gain.linearRampToValueAtTime(0.3 + Math.random() * 0.3, time + 0.002); // Snappy instant attack and higher gain
+        clapGain.gain.exponentialRampToValueAtTime(0.001, time + 0.04 + Math.random() * 0.04); // Quick organic decay
 
         clapSource.connect(clapFilter);
         clapFilter.connect(clapGain);
-        clapGain.connect(masterGain);
+        clapGain.connect(clapsMasterGain);
 
         clapSource.start(time);
-        clapSource.stop(time + 0.07);
+        clapSource.stop(time + 0.09);
 
-        // Next clap interval (approx. 3-5 claps per second per person)
-        const interval = 0.18 + Math.random() * 0.16;
+        // Clapping rate: ~3-6 claps per second
+        const interval = 0.16 + Math.random() * 0.18;
         time += interval;
       }
     }
