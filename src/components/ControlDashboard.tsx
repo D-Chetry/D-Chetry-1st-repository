@@ -21,6 +21,133 @@ import RosePetalEffect from './RosePetalEffect';
 import BalloonEffect from './BalloonEffect';
 import BryantParkBackground from './BryantParkBackground';
 
+const playCrowdCheer = () => {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+
+    // Create main destination node with master volume
+    const masterGain = ctx.createGain();
+    masterGain.gain.setValueAtTime(0, ctx.currentTime);
+    masterGain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 0.25); // Smooth rise / attack
+    masterGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 5.0); // Gentle decay to 5.0s
+    masterGain.connect(ctx.destination);
+
+    // --- Noise generator for the collective crowd background sound ---
+    const bufferSize = ctx.sampleRate * 5.0; // 5.0 seconds long
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    // Filter the noise to sound like human vocal formants (bandpass around 850Hz)
+    const bandpass = ctx.createBiquadFilter();
+    bandpass.type = 'bandpass';
+    bandpass.frequency.setValueAtTime(850, ctx.currentTime);
+    bandpass.Q.setValueAtTime(1.8, ctx.currentTime);
+
+    // Let the filter frequency rise up slightly then fall to mimic cheering energy
+    bandpass.frequency.linearRampToValueAtTime(1100, ctx.currentTime + 0.4);
+    bandpass.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 4.5);
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.3, ctx.currentTime);
+
+    noise.connect(bandpass);
+    bandpass.connect(noiseGain);
+    noiseGain.connect(masterGain);
+
+    // --- Individual voice components (adds individual cheering characteristics) ---
+    const frequencies = [220, 275, 330, 440, 520, 660];
+    frequencies.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const oscGain = ctx.createGain();
+      const oscFilter = ctx.createBiquadFilter();
+
+      // Triangle wave provides soft human-like hum/cheer tone
+      osc.type = 'triangle';
+      const detune = (Math.random() - 0.5) * 12;
+      osc.frequency.setValueAtTime(freq + detune, ctx.currentTime);
+
+      // Modulate frequency to simulate a dynamic cheer contour (rising in pitch, then decaying)
+      const attackDelay = 0.1 + Math.random() * 0.15;
+      osc.frequency.linearRampToValueAtTime((freq + detune) * 1.15, ctx.currentTime + attackDelay);
+      osc.frequency.exponentialRampToValueAtTime((freq + detune) * 0.85, ctx.currentTime + 4.2);
+
+      // Gain envelope for individual voice
+      oscGain.gain.setValueAtTime(0, ctx.currentTime);
+      oscGain.gain.setValueAtTime(0, ctx.currentTime + attackDelay);
+      oscGain.gain.linearRampToValueAtTime(0.06, ctx.currentTime + attackDelay + 0.25);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 3.8 + Math.random() * 0.8);
+
+      // Formant-like bandpass filtering
+      oscFilter.type = 'bandpass';
+      oscFilter.frequency.setValueAtTime(freq * 1.6, ctx.currentTime);
+      oscFilter.Q.setValueAtTime(2.2, ctx.currentTime);
+
+      osc.connect(oscFilter);
+      oscFilter.connect(oscGain);
+      oscGain.connect(masterGain);
+
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 5.0);
+    });
+
+    // Start background crowd roar
+    noise.start(ctx.currentTime);
+    noise.stop(ctx.currentTime + 5.0);
+
+    // --- Procedural Crowd Clapping Simulation (for 5 seconds) ---
+    // Create a short white noise buffer specifically for claps to save resources
+    const clapBufferSize = ctx.sampleRate;
+    const clapNoiseBuffer = ctx.createBuffer(1, clapBufferSize, ctx.sampleRate);
+    const clapNoiseData = clapNoiseBuffer.getChannelData(0);
+    for (let i = 0; i < clapBufferSize; i++) {
+      clapNoiseData[i] = Math.random() * 2 - 1;
+    }
+
+    // Simulate 8 independent clappers clapping at semi-random intervals
+    const clapperCount = 8;
+    for (let c = 0; c < clapperCount; c++) {
+      let time = ctx.currentTime + Math.random() * 0.4; // Staggered entry
+      while (time < ctx.currentTime + 5.0) {
+        const clapSource = ctx.createBufferSource();
+        clapSource.buffer = clapNoiseBuffer;
+        clapSource.loop = true;
+
+        const clapFilter = ctx.createBiquadFilter();
+        clapFilter.type = 'bandpass';
+        // Randomize frequency slightly per clap to represent different hands/positions
+        clapFilter.frequency.setValueAtTime(1100 + Math.random() * 500, time);
+        clapFilter.Q.setValueAtTime(2.5, time);
+
+        const clapGain = ctx.createGain();
+        clapGain.gain.setValueAtTime(0, time);
+        clapGain.gain.linearRampToValueAtTime(0.06 + Math.random() * 0.06, time + 0.003); // Instant attack
+        clapGain.gain.exponentialRampToValueAtTime(0.001, time + 0.025 + Math.random() * 0.03); // Quick decay
+
+        clapSource.connect(clapFilter);
+        clapFilter.connect(clapGain);
+        clapGain.connect(masterGain);
+
+        clapSource.start(time);
+        clapSource.stop(time + 0.07);
+
+        // Next clap interval (approx. 3-5 claps per second per person)
+        const interval = 0.18 + Math.random() * 0.16;
+        time += interval;
+      }
+    }
+  } catch (e) {
+    console.warn("Audio Context playback failed or blocked:", e);
+  }
+};
+
 export default function ControlDashboard() {
   const [activeEffect, setActiveEffect] = useState<'idle' | 'rosepetals' | 'balloons'>('idle');
   const [timeLeft, setTimeLeft] = useState<number>(0);
@@ -67,6 +194,9 @@ export default function ControlDashboard() {
 
     setActiveEffect('idle');
     setTimeLeft(5.0);
+    
+    // Play synthesized crowd cheering sound effect
+    playCrowdCheer();
     
     setTimeout(() => {
       setActiveEffect(type);
@@ -243,40 +373,41 @@ export default function ControlDashboard() {
 
 
           {/* Simulation Primary Card */}
-          <div className="fixed bottom-4 right-4 z-50 bg-white/92 backdrop-blur-md border border-[#E2E8F0]/80 rounded-lg p-2 shadow-lg flex flex-col gap-1.5 max-w-[165px] w-full">
+          <div className="fixed bottom-4 right-4 z-50 bg-white/92 backdrop-blur-md border border-[#E2E8F0]/80 rounded-xl p-3 shadow-lg flex flex-col gap-2.5 max-w-[260px] w-full">
             
             {/* Segment Header */}
-            <div className="pb-1.5 flex justify-between items-center bg-[#156ddf] px-1.5 py-1 rounded-md text-white">
-              <h3 className="font-display font-bold text-[8px] text-white/95 uppercase tracking-wider">
-                Simulation
+            <div className="pb-2 flex justify-between items-center bg-[#156ddf] px-2 py-1.5 rounded-lg text-white">
+              <h3 className="font-display font-bold text-xs text-white/95 uppercase tracking-wider">
+                Simulation Controls
               </h3>
-              <div className="text-[7px] text-blue-105 font-mono font-bold">
-                {activeEffect !== 'idle' ? `${timeLeft.toFixed(1)}s` : 'STBY'}
+              <div className="text-[9px] text-blue-100 font-mono font-bold">
+                {activeEffect !== 'idle' ? `${timeLeft.toFixed(1)}s` : 'STANDBY'}
               </div>
             </div>
 
             {/* Custom Grid matching the exact design button layout */}
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-2 gap-2.5">
               
               {/* Trigger Rose Petals Button */}
               <button
                 id="btn-trigger-rosepetals"
                 onClick={() => triggerSimulation('rosepetals')}
-                className={`py-1.5 px-1 rounded-lg border flex flex-col items-center justify-center gap-1 transition-all duration-300 relative overflow-hidden group w-full bg-[#1e28ac] text-[#eb1121] ${
+                className={`py-2 px-1.5 rounded-xl border-2 flex flex-col items-center justify-center gap-1.5 transition-all duration-300 relative overflow-hidden group w-full bg-[#1e28ac] text-[#eb1121] ${
                   activeEffect === 'rosepetals'
-                    ? 'border-rose-400 ring-1 ring-rose-200'
-                    : 'border-[#1e28ac]/15 hover:border-rose-400 cursor-pointer'
+                    ? 'border-[#eb1121] ring-2 ring-rose-200'
+                    : 'border-[#eb1121]/60 hover:border-[#eb1121] cursor-pointer'
                 }`}
               >
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs transition-transform duration-500 ${activeEffect === 'rosepetals' ? 'bg-rose-600 text-white rotate-12 scale-105 animate-pulse' : 'bg-[#FFF1F2] text-rose-600 group-hover:scale-105'}`}>
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm transition-transform duration-500 ${activeEffect === 'rosepetals' ? 'bg-rose-600 text-white rotate-12 scale-105 animate-pulse' : 'bg-[#FFF1F2] text-rose-600 group-hover:scale-105'}`}>
                   🌹
                 </div>
                 <div className="text-center leading-none">
-                  <span className="block font-normal text-[9px] text-[#ec0e4b]">Rose Petal</span>
-                  <span className="text-[6.5px] text-[#eb1121]/75 block mt-0.5">Petal fall</span>
+                  <span className="block font-bold text-xs text-[#ec0e4b]">Rose Petal</span>
+                  <span className="text-[8.5px] text-[#eb1121]/80 block mt-1">Petal fall</span>
+                  <span className="block font-black text-[9px] text-black tracking-wider mt-1.5 bg-white/90 px-1 py-0.5 rounded shadow-[0_1px_2px_rgba(0,0,0,0.15)] uppercase">CLICK ME</span>
                 </div>
                 {activeEffect === 'rosepetals' && (
-                  <span className="absolute bottom-0.2 font-mono text-[6px] text-[#eb1121] font-bold uppercase tracking-wider">{timeLeft.toFixed(1)}s</span>
+                  <span className="absolute bottom-0.2 font-mono text-[7px] text-[#eb1121] font-bold uppercase tracking-wider">{timeLeft.toFixed(1)}s</span>
                 )}
               </button>
 
@@ -284,21 +415,22 @@ export default function ControlDashboard() {
               <button
                 id="btn-trigger-balloons"
                 onClick={() => triggerSimulation('balloons')}
-                className={`py-1.5 px-1 rounded-lg border flex flex-col items-center justify-center gap-1 transition-all duration-300 relative overflow-hidden group w-full bg-[#2b1bc6] text-white ${
+                className={`py-2 px-1.5 rounded-xl border-2 flex flex-col items-center justify-center gap-1.5 transition-all duration-300 relative overflow-hidden group w-full bg-[#2b1bc6] text-white ${
                   activeEffect === 'balloons'
-                    ? 'border-blue-400 ring-1 ring-blue-200'
-                    : 'border-[#2b1bc6]/15 hover:border-blue-400 cursor-pointer'
+                    ? 'border-blue-300 ring-2 ring-blue-200'
+                    : 'border-white/70 hover:border-white cursor-pointer'
                 }`}
               >
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs transition-transform duration-500 ${activeEffect === 'balloons' ? 'bg-[#2563EB] text-white -translate-y-0.5 scale-105' : 'bg-[#F1F5F9] text-rose-500 group-hover:scale-105'}`}>
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm transition-transform duration-500 ${activeEffect === 'balloons' ? 'bg-[#2563EB] text-white -translate-y-0.5 scale-105' : 'bg-[#F1F5F9] text-rose-500 group-hover:scale-105'}`}>
                   🎈
                 </div>
                 <div className="text-center leading-none">
-                  <span className="block font-normal text-[9px] text-[#f00f46]">Balloon</span>
-                  <span className="text-[6.5px] text-white/70 block mt-0.5">Helium rise</span>
+                  <span className="block font-bold text-xs text-[#f00f46]">Balloon</span>
+                  <span className="text-[8.5px] text-white/85 block mt-1">Helium rise</span>
+                  <span className="block font-black text-[9px] text-black tracking-wider mt-1.5 bg-white/90 px-1 py-0.5 rounded shadow-[0_1px_2px_rgba(0,0,0,0.15)] uppercase">CLICK ME</span>
                 </div>
                 {activeEffect === 'balloons' && (
-                  <span className="absolute bottom-0.2 font-mono text-[6px] text-blue-200 font-bold uppercase tracking-wider">{timeLeft.toFixed(1)}s</span>
+                  <span className="absolute bottom-0.2 font-mono text-[7px] text-blue-200 font-bold uppercase tracking-wider">{timeLeft.toFixed(1)}s</span>
                 )}
               </button>
 
@@ -306,23 +438,23 @@ export default function ControlDashboard() {
 
             {/* Design Dashed Alert box */}
             {activeEffect === 'idle' ? (
-              <div className="p-1 bg-white/50 border border-dashed border-[#CBD5E1] rounded-md text-center backdrop-blur-sm">
-                <p className="text-[7.5px] text-[#64748B] font-semibold leading-tight">Pick an event.</p>
+              <div className="p-2 bg-white/50 border border-dashed border-[#CBD5E1] rounded-lg text-center backdrop-blur-sm">
+                <p className="text-[10px] text-[#64748B] font-semibold leading-tight">Pick a simulation event.</p>
               </div>
             ) : (
-              <div className="p-1 bg-blue-50/90 border border-blue-200 rounded-md flex flex-col items-center gap-1 backdrop-blur-sm">
+              <div className="p-1.5 bg-blue-50/90 border border-blue-200 rounded-lg flex flex-col items-center gap-1.5 backdrop-blur-sm">
                 <div className="flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-blue-600 animate-ping" />
-                  <span className="text-blue-800 font-bold uppercase tracking-wider font-mono text-[7px]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping" />
+                  <span className="text-blue-800 font-bold uppercase tracking-wider font-mono text-[8px]">
                     ON: {activeEffect === 'rosepetals' ? 'PETALS' : 'BALLOONS'}
                   </span>
                 </div>
                 <button
                   id="btn-cancel-simulation"
                   onClick={cancelActiveSimulation}
-                  className="px-1.5 py-0.5 w-full rounded bg-white border border-red-200 text-red-600 hover:bg-red-50 text-[7.5px] font-bold transition-all focus:outline-none flex items-center justify-center gap-1 shadow-sm cursor-pointer"
+                  className="px-2 py-1 w-full rounded bg-white border border-red-200 text-red-600 hover:bg-red-50 text-[9px] font-bold transition-all focus:outline-none flex items-center justify-center gap-1 shadow-sm cursor-pointer"
                 >
-                  <RotateCcw className="w-2 h-2" />
+                  <RotateCcw className="w-2.5 h-2.5" />
                   <span>Abort</span>
                 </button>
               </div>
